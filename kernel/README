@@ -1,0 +1,8 @@
+Compile vendor kernel:
+
+git clone https://github.com/TinkerBoard/debian_kernel.git --depth=1 -b release
+cd debian_kernel; mkdir tmp; cd tmp; mkdir lib;
+cd ../../; mkdir out;
+make kernel
+
+The result is in ./out/boot.img

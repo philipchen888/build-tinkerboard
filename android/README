@@ -1,0 +1,89 @@
+Build android sdcard image for tinkerboard.
+
+   wget https://dlcdnets.asus.com/pub/ASUS/mb/Embedded_IPC/TinkerBoard_S/Tinker_Board-AndroidN-V14.4.0.14-20200711.zip
+   unzip Tinker_Board-AndroidN-V14.4.0.14-20200711.zip ( Android 7.14 )
+  
+   sudo dd if=./Tinker_Board-AndroidN-V14.4.0.14-20200711.img of=/dev/sda bs=4096 conv=notrunc,fsync
+
+   Install Google Play Store. Go to https://opengapps.org/ select ARM 7.1 mini, download
+   unzip -d ./gapps open_gapps-arm-7.1-mini-20220215.zip
+   cd ./gapps/Core/
+   sudo apt install plzip
+   plzip -d googlepartnersetup-all.tar.lz
+   plzip -d gmscore-arm.tar.lz
+   plzip -d gsfcore-all.tar.lz
+   plzip -d gsflogin-all.tar.lz
+   plzip -d vending-arm.tar.lz
+   tar -xvf googlepartnersetup-all.tar
+   tar -xvf gmscore-arm.tar
+   tar -xvf gsfcore-all.tar
+   tar -xvf gsflogin-all.tar
+   tar -xvf vending-arm.tar
+   cd ../../
+   cp ./gapps/Core/googlepartnersetup-all/nodpi/priv-app/GooglePartnerSetup/GooglePartnerSetup.apk .
+   cp ./gapps/Core/gmscore-arm/nodpi/priv-app/PrebuiltGmsCore/PrebuiltGmsCore.apk .
+   cp ./gapps/Core/gsfcore-all/nodpi/priv-app/GoogleServicesFramework/GoogleServicesFramework.apk .
+   cp ./gapps/Core/gsflogin-all/nodpi/priv-app/GoogleLoginService/GoogleLoginService.apk .
+   cp ./gapps/Core/vending-arm/nodpi/priv-app/Phonesky/Phonesky.apk .
+   adb push these 5 apks to tinkerboard /system/priv-app and adb reboot tinkerboard. 
+
+Plugin sdcard to tinkerboard.
+After setting up android, turn on developer mode.
+Settings -> About tablet -> hit build number several times
+Power -> Power off. Power on.
+
+adb devices -l
+adb connect 192.168.86.xxx
+adb root
+adb connect 192.168.86.xxx
+adb shell
+du -h /system
+mount -o rw,remount /system
+exit
+
+To install apks:
+adb push GooglePartnerSetup.apk /system/priv-app
+adb push PrebuiltGmsCore.apk /system/priv-app
+adb push GoogleServicesFramework.apk /system/priv-app
+adb push GoogleLoginService.apk /system/priv-app
+adb push Phonesky.apk /system/priv-app
+adb push helloworld.apk /sdcard
+adb push happybirthday.apk /sdcard
+adb push diceroller.apk /sdcard
+adb push drawing.apk /sdcard
+adb push drawshape.apk /sdcard
+adb push kaleidoscope.apk /sdcard
+adb push myanalogclock.apk /sdcard
+adb push randomsong.apk /sdcard
+adb shell
+cd /system/priv-app
+ln -s /sdcard/helloworld.apk .
+ln -s /sdcard/happybirthday.apk .
+ln -s /sdcard/diceroller.apk .
+ln -s /sdcard/drawing.apk .
+ln -s /sdcard/drawshape.apk .
+ln -s /sdcard/kaleidoscope.apk .
+ln -s /sdcard/myanalogclock.apk .
+ln -s /sdcard/randomsong.apk .
+exit
+adb install -r helloworld.apk
+adb install -r happybirthday.apk
+adb install -r diceroller.apk
+adb install -r drawing.apk
+adb install -r drawshape.apk
+adb install -r kaleidoscope.apk
+adb install -r myanalogclock.apk
+adb install -r randomsong.apk
+adb shell
+mount -o ro,remount /system
+exit
+
+To uninstall apks:
+adb uninstall com.example.helloworld
+adb uninstall com.example.happybirthday
+adb uninstall com.example.diceroller
+adb uninstall com.example.drawing
+adb uninstall com.example.drawshape
+adb uninstall com.example.kaleidoscope
+adb uninstall com.example.myanalogclock
+adb uninstall com.example.randomsong

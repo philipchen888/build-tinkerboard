@@ -1,0 +1,6 @@
+Compile uboot:
+
+git clone https://github.com/TinkerBoard/debian_u-boot.git --depth=1 -b release
+make u-boot
+
+The result is in ./debian_u-boot/u-boot.img

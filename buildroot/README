@@ -1,0 +1,79 @@
+Build buildroot sdcard image for tinkerboard:
+
+Input files: ../uboot/debian_u-boot/u-boot.img
+             ../linux/linux/arch/arm/boot/zImage
+             ../linux/linux/arch/arm/boot/dts/rockchip/rk3288-tinker.dtb
+             ./patches/rk3288.conf
+             ../linux/hw_intf.conf
+             ../linux/linux/tmp/lib/modules
+
+   git clone git://git.buildroot.net/buildroot
+   cp ./patches/tinker_defconfig ./buildroot/configs
+   \rm -rf ./buildroot/board/asus/tinker
+   cp -r ./patches/tinker ./buildroot/board/asus
+   cd buildroot
+   \rm .config
+   make clean
+   make tinker_defconfig
+   make
+
+   The result is in ./output/images/sdcard.img
+
+   sudo dd if=./output/images/sdcard.img of=/dev/sda bs=4096 conv=notrunc,fsync
+
+   Eject sdcard. Plugin sdcard again.
+   sudo vi /media/$USER/rootfs/etc/network/interfaces ( delete everything after iface lo inet loopback )
+   sudo cp -r ../../linux/linux/tmp/lib/modules /media/$USER/rootfs/lib
+   cd /media/$USER/rootfs/lib/firmware/rtl_bt
+   sudo cp rtl8723bs_config-OBDA8723.bin rtl8723bs_config.bin
+   cd ~/
+   sync
+   Eject sdcard.
+
+plugin sdcard to SBC
+login:
+username: root
+password: linaro
+
+adduser linaro
+
+vi /etc/wpa_supplicant.conf ( change to:
+update_config=1
+country=US
+network={
+        ssid="SSID"
+        psk="PASSWORD"
+}
+
+vi /etc/rc.local ( change to:
+#!/bin/sh
+wpa_supplicant -B -i wlan0 -c /etc/wpa_supplicant.conf
+
+chmod 755 /etc/rc.local
+
+vi /etc/init.d/rcS ( append:
+source /etc/rc.local
+
+vi /etc/vsftpd.conf ( anonymous_enable=NO, local_enable=YES, write_enable=YES )
+
+reboot
+
+date
+aplay -l
+vi /etc/asound.conf ( add
+pcm.!default {
+type hw
+card 0
+}
+ctl.!default {
+type hw
+card 0
+}
+
+aplay /home/linaro/yoursong.wav
+mpg123 -a hw:0,0 /home/linaro/yoursong.mp3
+mpv --no-video /home/linaro/yoursong.mp3
+
+hciconfig hci0 up
+hciconfig -a
+hcitool dev

@@ -1,0 +1,5 @@
+Compile rootfs:
+
+make rootfs
+
+The result is in ./linaro-rootfs.img

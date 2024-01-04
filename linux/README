@@ -1,0 +1,10 @@
+Compile mainline kernel:
+
+git clone https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git --depth=1
+cat multi_v7_defconfig >> ./linux/arch/arm/configs/multi_v7_defconfig
+cp rk3288-tinker.dtsi ./linux/arch/arm/boot/dts/rockchip/
+cd linux; mkdir tmp; cd tmp; mkdir lib;
+cd ../../; mkdir out;
+make kernel
+
+The result is in ./out/boot.img
