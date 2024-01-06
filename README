@@ -34,7 +34,6 @@ Steps to build tinkerboard sdcard image:
    make kernel
 
    The result is in ./out/boot.img
-   make clean
 
 5. cd ~/build-tinkerboard/linux  ( Compile mainline kernel )
    git clone https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git --depth=1
@@ -45,7 +44,6 @@ Steps to build tinkerboard sdcard image:
    make kernel
 
    The result is in ./out/boot.img
-   make clean
 
 6. cd ~/build-tinkerboard/rootfs-buster  ( Compile debian buster rootfs )
    make rootfs        ( has desktop )
