@@ -13,5 +13,6 @@
 
 # Generate the SSH keys if non-existent
 test -f /etc/ssh/ssh_host_dsa_key || dpkg-reconfigure openssh-server
-
+/usr/bin/bash -c 'echo performance | tee /sys/bus/cpu/devices/cpu*/cpufreq/scaling_governor > /dev/null || true'
+/usr/bin/bash -c '[ -d /sys/devices/platform/fb000000.gpu/devfreq/fb000000.gpu/ ] && echo performance > /sys/devices/platform/fb000000.gpu/devfreq/fb000000.gpu/governor || true'
 exit 0

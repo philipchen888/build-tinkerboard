@@ -1,63 +1,59 @@
-export BOARD=tinker
 export LB_BOOTSTRAP_INCLUDE="apt-transport-https gnupg"
-export ARCH=arm
-export CROSS_COMPILE=/usr/local/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-
+export ARCH=arm64
+export CROSS_COMPILE=/usr/local/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
 
-rootfs: clean prebuild buildrootfs postbuild mkimage
-basicrootfs: clean prebuild buildbasicrootfs postbuild mkbasicimage
+rootfs: clean prebuild buildrootfs postbuild mkimage mkespimage
 
 clean:
 	sudo lb clean --purge
-	\rm -rf config .build rootfs
+	sudo \rm -rf config .build rootfs local
 
 cleanall:
 	sudo lb clean --purge
-	\rm -rf config .build rootfs
-	\rm -rf linaro-rootfs.img linaro-basicrootfs.img
+	\rm -rf config .build rootfs local
+	\rm -rf linaro-rootfs.img
 
 prebuild:
 	lb config \
 	--apt-indices false \
 	--apt-recommends false \
 	--apt-secure false \
-	--architectures armhf \
+	--architectures arm64 \
 	--archive-areas 'main contrib non-free-firmware' \
 	--backports false \
 	--binary-filesystem ext4 \
 	--binary-images tar \
 	--bootappend-live "hostname=linaro-alip username=linaro" \
-	--bootstrap-qemu-arch armhf \
-	--bootstrap-qemu-static /usr/bin/qemu-arm-static \
+	--bootstrap-qemu-arch arm64 \
+	--bootstrap-qemu-static /usr/bin/qemu-aarch64-static \
 	--cache false \
 	--chroot-filesystem none \
 	--compression gzip \
 	--debootstrap-options "--variant=minbase --include=apt-transport-https,gnupg" \
 	--distribution bookworm \
 	--gzip-options '-9 --rsyncable' \
-	--iso-publisher 'Linaro; http://www.linaro.org/; linaro-dev@lists.linaro.org' \
-	--iso-volume 'Linaro Bookworm $(date +%Y%m%d-%H:%M)' \
 	--linux-flavours none \
 	--linux-packages none \
+	--parent-mirror-binary 'http://ftp.us.debian.org/debian/' \
+	--parent-mirror-binary-security 'http://security.debian.org/debian-security/' \
+	--parent-mirror-bootstrap 'http://ftp.us.debian.org/debian/' \
+	--parent-mirror-chroot 'http://ftp.us.debian.org/debian/' \
+	--parent-mirror-chroot-security 'http://security.debian.org/debian-security/' \
 	--mode debian \
 	--security true \
-	--system normal \
-	--updates true
+	--system normal
 
 buildrootfs:
 	\cp -rf $(PWD)/../customization/* config/
 	cp linaro.list.chroot config/package-lists/linaro.list.chroot
-	sudo lb build
-
-buildbasicrootfs:
-	\cp -rf $(PWD)/../customization/* config/
-	cp linaro.list.chroot.basic config/package-lists/linaro.list.chroot
+	cp config/hooks/normal/* config/hooks/
 	sudo lb build
 
 postbuild:
-	ARCH=armhf $(PWD)/../mk-rootfs-bookworm.sh
+	ARCH=arm64 $(PWD)/../mk-rootfs-bookworm.sh
 
 mkimage:
 	$(PWD)/../mk-image.sh
 
-mkbasicimage:
-	$(PWD)/../mk-basicimage.sh
+mkespimage:
+	$(PWD)/../mk-espimage.sh

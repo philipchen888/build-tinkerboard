@@ -1,126 +1,128 @@
-This is to build tinkerboard sdcard image for ASUS TinkerBoard:
+This is to build sdcard image for tinkerboard 3:
 
-Steps to build tinkerboard sdcard image:
+Info on tinkerboard 3: https://github.com/TinkerBoard/TinkerBoard/wiki/Tinker-Board-3-&-3S#116-asus-api-documentation
+
+Parts needed:
+1. tinkerboard 3.
+2. Sandisk 64GB micro sdcard.    ( install u-boot in on board spi )
+3. Host PC with ubuntu 24.
+4. USB2 SATA SSD
+5. usb3 stick.
+
+Steps to build tinkerboard 3 sdcard image:
 
 1. git clone https://github.com/philipchen888/build-tinkerboard.git
-   sudo apt-get install build-essential git libssl-dev nmap net-tools libncurses5-dev libncursesw5-dev dnsutils vsftpd ftp binfmt-support qemu-user-static scons libncurses5-dev libncursesw5-dev libdbus-glib-1-dev libbluetooth-dev python-dev python-setuptools python3-dev python3-pip python3-setuptools libcurl4-openssl-dev gettext dbus-x11 chrpath diffstat gawk texinfo curl flex bison device-tree-compiler python swig libmpc-dev
+   sudo apt update
+   sudo apt upgrade
+   sudo apt-get install build-essential git libssl-dev nmap net-tools libncurses-dev dnsutils vsftpd ftp binfmt-support qemu-user-static scons libdbus-glib-1-dev libbluetooth-dev python3-dev python3-pip python3-setuptools libcurl4-openssl-dev gettext dbus-x11 chrpath diffstat gawk texinfo curl flex bison device-tree-compiler swig libmpc-dev debootstrap debhelper kpartx gdisk devscripts isolinux po4a libgnutls28-dev mtools python-is-python3 python3-pyelftools u-boot-tools gcc-aarch64-linux-gnu
 
-2. Install cross compiler and live-build:
    wget https://releases.linaro.org/components/toolchain/binaries/latest-7/aarch64-linux-gnu/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu.tar.xz
    sudo tar xvf gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu.tar.xz  -C /usr/local/
-   wget https://releases.linaro.org/components/toolchain/binaries/latest-7/arm-linux-gnueabihf/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf.tar.xz
-   sudo tar xvf gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf.tar.xz -C /usr/local/
-   sudo apt-get install debootstrap debhelper kpartx gdisk devscripts dh-systemd isolinux po4a
-   #wget https://launchpad.net/debian/+archive/primary/+sourcefiles/live-build/1:20210407/live-build_20210407.tar.xz
-   #tar xvf live-build_20210407.tar.xz
-   wget https://launchpad.net/debian/+archive/primary/+sourcefiles/live-build/1:20230502/live-build_20230502.tar.xz
-   tar xvf live-build_20230502.tar.xz
+
+2. Install live-build:
+   sudo apt-get install debootstrap debhelper kpartx gdisk devscripts isolinux po4a live-build
+
+   lb --version ( 3.0~a57-1 /usr/bin/lb )
+
+   For trixie, bookworm and forky:
+   wget http://deb.debian.org/debian/pool/main/l/live-build/live-build_20250814.tar.xz
+   tar xvf live-build_20250814.tar.xz
    cd live-build
    sudo make install
+   lb --version ( 20250814 /usr/bin/lb )
 
-   linux-firmware is in:
-   git clone https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git --depth=1
-
-3. cd ~/build-tinkerboard/uboot  ( Compile u-boot )
-   git clone https://github.com/TinkerBoard/debian_u-boot.git --depth=1 -b release
+3. cd ~/build-tinkerboard/uboot  ( Download u-boot to spi )
+   git clone https://github.com/TinkerBoard-Linux/rockchip-linux-rkbin --depth=1 -b linux5.10-rk356x
+   mv rockchip-linux-rkbin rkbin
+   git clone https://github.com/TinkerBoard-Linux/rockchip-linux-u-boot --depth=1 -b linux5.10-rk356x
+   mv rockchip-linux-u-boot u-boot
+   change tinker_board_3_defconfig to enable UEFI boot.
    make u-boot
 
-   The result is in ./debian_u-boot/u-boot.img
+   The results are in ./out/u-boot.img, idbloader.img, trust.img, uboot-trust-spi.img
 
-4. cd ~/build-tinkerboard/kernel  ( Compile vendor's kernel )
-   git clone https://github.com/TinkerBoard/debian_kernel.git --depth=1 -b release
-   cd debian_kernel; mkdir tmp; cd tmp; mkdir lib;
-   cd ../../; mkdir out;
+   Plugin sdcard to PC.
+   sudo ./mkuboot.sh
+   Eject sdcard from PC.
+
+   Plugin sdcard to tinkerboard 3.
+   Also you can burn uboot-trust-spi.img to tinkerboard 3 spi flash.
+
+4. cd ~/build-tinkerboard/linux ( Compile vendor kernel 5.10 )
+   git clone https://github.com/TinkerBoard-Linux/rockchip-linux-kernel.git --depth=1 -b linux5.10-rk356x
+   mv rockchip-linux-kernel linux
+   vi ./linux/arch/arm64/configs/tinker_board_3_defconfig ( delete RTL8822CE, AP6XXX )
    make kernel
 
-   The result is in ./out/boot.img
+   The results are in ./linux/tmp/lib/modules/*
+                      ./linux/tmp/boot/*
 
-5. cd ~/build-tinkerboard/linux  ( Compile mainline kernel )
-   git clone https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git --depth=1
-   cat multi_v7_defconfig >> ./linux/arch/arm/configs/multi_v7_defconfig
-   cp rk3288-tinker.dtsi ./linux/arch/arm/boot/dts/rockchip/
-   cd linux; mkdir tmp; cd tmp; mkdir lib;
-   cd ../../; mkdir out;
-   make kernel
-
-   The result is in ./out/boot.img
-
-6. cd ~/build-tinkerboard/rootfs-buster  ( Compile debian buster rootfs )
-   make rootfs        ( has desktop )
-   The result is in ./linaro-rootfs.img
-
-   make basicrootfs   ( no desktop )
-   The result is in ./linaro-basicrootfs.img
-
-7. cd ~/build-tinkerboard/rootfs-bullseye  ( Compile debian bullseye rootfs )
-   make rootfs        ( has desktop )
-   The result is in ./linaro-rootfs.img
-
-   make basicrootfs   ( no desktop )
-   The result is in ./linaro-basicrootfs.img
-
-8. cd ~/build-tinkerboard/rootfs-bookworm  ( Compile debian bookworm rootfs )
-   make rootfs        ( has desktop )
-   The result is in ./linaro-rootfs.img
-
-   make basicrootfs   ( no desktop )
-   The result is in ./linaro-basicrootfs.img
-
-9. cd ~/build-tinkerboard/rootfs-ubuntu-focal  ( Compile debian ubuntu-focal rootfs )
+5. cd ~/build-tinkerboard/rootfs-bookworm  ( Compile debian bookworm rootfs )
    make rootfs
-   The result is in ./linaro-rootfs.img
+   The results are in ./linaro-rootfs.img linaro-esp.img
+   make clean
 
-10. cd ~/build-tinkerboard/rootfs-ubuntu-jammy  ( Compile debian ubuntu-jammy rootfs )
+6. cd ~/build-tinkerboard/rootfs-trixie  ( Compile debian trixie rootfs )
    make rootfs
-   The result is in ./linaro-rootfs.img
-   make cleanall
+   The results are in ./linaro-rootfs.img linaro-esp.img
+   make clean
 
-11. cd ~/build-tinkerboard/buster-lxde  ( Build debian buster lxde-desktop image )
-    ./mksdcardimg.sh
-    The result is in sdcard.img
+7. cd ~/build-tinkerboard/rootfs-forky  ( Compile debian forky rootfs )
+   make rootfs
+   The results are in ./linaro-rootfs.img linaro-esp.img
+   make clean
 
-12. cd ~/build-tinkerboard/buster-xfce-kde-gnome ( Build buster xfce-kde-gnome desktop image )
-    ./mksdcardimg.sh
-    The result is in sdcard.img
+8. cd ~/build-tinkerboard/rootfs-ubuntu-noble  ( Compile ubuntu-noble rootfs )
+   make rootfs
+   The results are in ./linaro-rootfs.img linaro-esp.img
+   make clean
 
-13. cd ~/build-tinkerboard/bullseye-lxde  ( Build debian bullseye lxde-desktop image )
-    ./mksdcardimg.sh
-    The result is in sdcard.img
+9. cd ~/build-tinkerboard/rootfs-ubuntu-questing  ( Compile ubuntu-questing rootfs )
+   make rootfs
+   The results are in ./linaro-rootfs.img linaro-esp.img
+   make clean
 
-14. cd ~/build-tinkerboard/bullseye-xfce-kde-gnome ( Build bullseye xfce-kde-gnome desktop image )
-    ./mksdcardimg.sh
-    The result is in sdcard.img
+10. cd ~/build-tinkerboard/bookworm-gnome  ( Build debian bookworm gnome-desktop image )
+    Plugin usb3 stick to PC.
+    sudo ./mksdcardimg.sh
+    Eject usb3 stick from PC.
 
-15. cd ~/build-tinkerboard/bookworm-lxde  ( Build debian bookworm lxde-desktop image )
-    ./mksdcardimg.sh
-    The result is in sdcard.img
+11. cd ~/build-tinkerboard/trixie-gnome    ( Build debian trixie gnome-desktop image )
+    Plugin usb3 stick to PC.
+    sudo ./mksdcardimg.sh
+    Eject usb3 stick from PC.
 
-16. cd ~/build-tinkerboard/bookworm-xfce-kde-gnome ( Build bookworm xfce-kde-gnome desktop image )
-    ./mksdcardimg.sh
-    The result is in sdcard.img
+12. cd ~/build-tinkerboard/forky-gnome     ( Build debian forky gnome-desktop image )
+    Plugin usb3 stick to PC.
+    sudo ./mksdcardimg.sh
+    Eject usb3 stick from PC.
 
-17. cd ~/build-tinkerboard/ubuntu-focal  ( Build ubuntu-focal image )
-    ./mksdcardimg.sh
-    The result is in sdcard.img
+13. cd ~/build-tinkerboard/ubuntu-noble  ( Build ubuntu-noble image )
+    Plugin usb3 stick to PC.
+    sudo ./mksdcardimg.sh
+    Eject usb3 stick from PC.
 
-18. cd ~/build-tinkerboard/ubuntu-jammy  ( Build ubuntu-jammy image )
-    ./mksdcardimg.sh
-    The result is in sdcard.img
+14. cd ~/build-tinkerboard/ubuntu-questing  ( Build ubuntu-questing image )
+    Plugin usb3 stick to PC.
+    sudo ./mksdcardimg.sh
+    Eject usb3 stick from PC.
 
-19. cd ~/build-tinkerboard/yocto  ( Build yocto image )
+15. cd ~/build-tinkerboard/android       ( Build android image )
 
-20. cd ~/build-tinkerboard/yocto-lxde  ( Build yocto lxde-desktop image )
+16. cd ~/build-tinkerboard/bookworm-flightaware  ( flightaware in bookworm )
 
-21. cd ~/build-tinkerboard/yocto-xfce  ( Build yocto xfce-desktop image )
+17. cd ~/build-tinkerboard/yocto         ( Build yocto desktop image )
 
-22. cd ~/build-tinkerboard/buildroot   ( Build buildroot image )
+18. cd ~/build-tinkerboard/buildroot     ( Build buildroot image )
 
-23. cd ~/build-tinkerboard/android     ( Build android image )
+19. cd ~/build-tinkerboard/bookworm-gpio ( Build bookworm gpio tests )
 
-24. cd ~/build-tinkerboard/bullseye-gpio  ( gpio test in bullseye-lxde )
+20. cd ~/build-tinkerboard/fedora        ( Build fedora image )
 
-25. cd ~/build-tinkerboard/bullseye-pn532nfc  ( pn532nfc test in bullseye-lxde )
+21. cd ~/build-tinkerboard/ubuntu-uefi   ( Build ubuntu-uefi image )
 
-26. cd ~/build-tinkerboard/bullseye-flightaware  ( flightaware in bullseye-lxde ) 
+22. cd ~/build-tinkerboard/bookworm-uefi ( Build bookworm-uefi image )
 
-27. cd ~/build-tinkerboard/baremetal-gpio  ( gpio test in baremetal )
+23. cd ~/build-tinkerboard/trixie-uefi   ( Build trixie-uefi image )
+
+24. cd ~/build-tinkerboard/forky-uefi    ( Build forky-uefi image )

@@ -1,10 +1,8 @@
-Compile mainline kernel:
+Compile vendor kernel:
 
-git clone https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git --depth=1
-cat multi_v7_defconfig >> ./linux/arch/arm/configs/multi_v7_defconfig
-cp rk3288-tinker.dtsi ./linux/arch/arm/boot/dts/rockchip/
-cd linux; mkdir tmp; cd tmp; mkdir lib;
-cd ../../; mkdir out;
+git clone https://github.com/TinkerBoard-Linux/rockchip-linux-kernel.git --depth=1 -b linux5.10-rk356x
+mv rockchip-linux-kernel linux
 make kernel
 
-The result is in ./out/boot.img
+The results are in ./linux/tmp/lib/modules/*
+                   ./linux/tmp/boot/*

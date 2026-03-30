@@ -1,6 +1,37 @@
 Compile uboot:
 
-git clone https://github.com/TinkerBoard/debian_u-boot.git --depth=1 -b release
+git clone https://github.com/TinkerBoard-Linux/rockchip-linux-rkbin --depth=1 -b linux5.10-rk356x
+mv rockchip-linux-rkbin rkbin
+git clone https://github.com/TinkerBoard-Linux/rockchip-linux-u-boot --depth=1 -b linux5.10-rk356x
+mv rockchip-linux-u-boot u-boot
+
+To boot uefi:
+vi ./u-boot/configs/tinker_board_3_defconfig ( delete OPTEE, append:
+CONFIG_MMC_SDHCI_SDMA=y
+CONFIG_NVME=y
+CONFIG_CMD_NVME=y
+CONFIG_EFI_PARTITION=y
+CONFIG_PARTITION_TYPE_GUID=y
+CONFIG_CMD_GPT=y
+CONFIG_CMD_PART=y
+CONFIG_CMD_FS_UUID=y
+CONFIG_CMD_FAT=y
+CONFIG_FS_FAT=y
+CONFIG_CMD_MMC=y
+CONFIG_EFI_LOADER=y
+CONFIG_CMD_BOOTEFI=y
+CONFIG_BLOBLIST=y
+CONFIG_BLOBLIST_ALLOC=y
+)
+
 make u-boot
 
-The result is in ./debian_u-boot/u-boot.img
+The results are in ./out/u-boot.img, idbloader.img, trust.img, uboot-trust-spi.img
+
+Plugin sdcard to PC.
+sudo ./mkuboot.sh
+Eject sdcard from PC.
+
+Plugin sdcard to tinkerboard 3.
+Also you can burn uboot-trust-spi.img to tinkerboard 3 spi flash.
+

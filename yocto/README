@@ -76,3 +76,8 @@ glmark2-es2-drm
 aplay /home/linaro/yoursong.wav
 mpv --no-video /home/linaro/yoursong.mp3
 mpv /home/linaro/yourvideo.mp4
+
+--------------------------------------------------------------------
+
+wget https://dlcdnets.asus.com/pub/ASUS/Embedded_IPC/Tinker%20Board%203/Tinker_Board_3-Yocto-Kirkstone-v1.0.1-20240827-release.zip
+unzip Tinker_Board_3-Yocto-Kirkstone-v1.0.1-20240827-release.zip
